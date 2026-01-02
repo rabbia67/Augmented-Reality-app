@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Holo-Museum | Augmented Reality Experience</title>
+
+    <!-- A-Frame & AR.js -->
+    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;800&family=Cinzel:wght@400;700&display=swap"
+        rel="stylesheet">
+
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body style="margin: 0; overflow: hidden;">
+
+    <!-- SPLASH SCREEN (Redesigned) -->
+    <div id="splash-screen">
+        <div class="ambient-glow"></div>
+        <div class="grid-overlay"></div>
+
+        <div class="splash-content">
+            <div class="logo-wrapper">
+                <div class="scan-line"></div>
+                <h1>HOLO-MUSEUM</h1>
+            </div>
+
+            <p class="tagline">ARCHAEOLOGY REIMAGINED</p>
+
+            <button id="start-btn">
+                <span class="btn-text">Enter Experience</span>
+                <span class="btn-border"></span>
+            </button>
+
+            <p class="instruction-text">Ensure audio is on • Camera access required</p>
+        </div>
+    </div>
+
+    <!-- UI LAYER (Updated with Quiz & Snapshot) -->
+    <div id="ui-layer" class="hidden">
+        <div class="header-bar">
+            <div class="status-indicator">
+                <span id="ar-status-dot"></span>
+                <span id="ar-status-text">Looking for Artifacts...</span>
+            </div>
+            <button class="snap-btn" onclick="takeSnapshot()">📸</button>
+        </div>
+
+        <!-- Quiz Modal -->
+        <div id="quiz-container" class="hidden">
+            <div class="quiz-box">
+                <h3 id="quiz-question">Question Loading...</h3>
+                <div id="quiz-options"></div>
+                <div id="quiz-feedback"></div>
+            </div>
+        </div>
+
+        <div id="voice-feedback" class="voice-bubble hidden">
+            <div class="mic-icon">🎙️</div>
+            <span id="voice-text">Listening...</span>
+        </div>
+
+        <!-- Detected Artifact Label -->
+        <div id="artifact-name-display" class="hidden">
+            <h2 id="current-artifact-name">Unknown</h2>
+        </div>
+
+        <!-- Hotspot Tooltip -->
+        <div id="hotspot-tooltip" class="hidden">
+            <h4 id="hotspot-title">Title</h4>
+            <p id="hotspot-text">Description</p>
+        </div>
+
+        <div class="control-panel">
+            <button class="glass-btn" onclick="startQuiz()">
+                <span>🎓</span> Quiz
+            </button>
+            <button class="glass-btn" onclick="triggerVoiceInfo()">
+                <span>🗣️</span> Info
+            </button>
+            <button class="glass-btn" onclick="interact('rotate')">
+                <span>🔄</span> Spin
+            </button>
+            <button class="glass-btn" onclick="toggleWireframe()">
+                <span>🕸️</span> X-Ray
+            </button>
+        </div>
+    </div>
+
+    <!-- AR SCENE -->
+    <!-- Added preserveDrawingBuffer: true for Screenshots -->
+    <a-scene embedded
+        arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;"
+        vr-mode-ui="enabled: false"
+        renderer="logarithmicDepthBuffer: true; colorManagement: true; preserveDrawingBuffer: true;">
+
+        <a-assets>
+            <a-asset-item id="helmet-model"
+                src="https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/DamagedHelmet/glTF-Binary/DamagedHelmet.glb"></a-asset-item>
+            <a-asset-item id="camera-model"
+                src="https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/AntiqueCamera/glTF-Binary/AntiqueCamera.glb"></a-asset-item>
+        </a-assets>
+
+        <!-- Ancient Theme Music (Kevin MacLeod - Mirage) - PLACED OUTSIDE A-ASSETS -->
+        <audio id="bg-music" src="https://upload.wikimedia.org/wikipedia/commons/e/e8/MacLeod_-_Mirage.ogg" loop
+            crossorigin="anonymous" preload="auto"></audio>
+
+        <!-- LIGHTING -->
+        <a-entity light="type: ambient; color: #ffffff; intensity: 0.8"></a-entity>
+        <a-entity light="type: directional; color: #D4AF37; intensity: 1.5" position="-1 1 1"></a-entity>
+
+        <!-- MARKER 1: WARRIOR HELMET -->
+        <a-marker type="pattern" url="helmet.patt" id="marker-helmet" emitevents="true">
+            <a-entity id="entity-helmet" gltf-model="#helmet-model" position="0 0.5 0" scale="0.5 0.5 0.5"
+                rotation="0 0 0"
+                animation="property: rotation; to: 0 360 0; loop: true; dur: 10000; easing: linear; enabled: false">
+            </a-entity>
+
+
+
+
+        </a-marker>
+
+        <!-- MARKER 2: ANTIQUE CAMERA -->
+        <a-marker type="pattern" url="camera.patt" id="marker-camera" emitevents="true">
+            <a-entity id="entity-camera" gltf-model="#camera-model" position="0 0.5 0" scale="0.5 0.5 0.5"
+                rotation="0 -90 0"
+                animation="property: rotation; to: 0 270 0; loop: true; dur: 10000; easing: linear; enabled: false">
+            </a-entity>
+
+
+        </a-marker>
+
+        <a-entity camera>
+            <!-- KEY FIX: Mouse/Touch interaction with Raycaster -->
+            <a-entity cursor="fuse: false; rayOrigin: mouse;" raycaster="objects: .clickable" position="0 0 -1"
+                geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03" material="color: yellow; shader: flat"
+                visible="false"> <!-- Invisible cursor, uses mouse click pos -->
+            </a-entity>
+        </a-entity>
+    </a-scene>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
