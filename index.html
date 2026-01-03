@@ -51,7 +51,10 @@
                 <span id="ar-status-dot"></span>
                 <span id="ar-status-text">Looking for Artifacts...</span>
             </div>
-            <button class="snap-btn" onclick="takeSnapshot()">📸</button>
+            <div class="header-btns">
+                <button class="snap-btn" onclick="toggle360View()">🔄</button>
+                <button class="snap-btn" onclick="takeSnapshot()">📸</button>
+            </div>
         </div>
 
         <!-- Quiz Modal -->
@@ -104,9 +107,23 @@
 
         <a-assets>
             <a-asset-item id="helmet-model"
-                src="https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/DamagedHelmet/glTF-Binary/DamagedHelmet.glb"></a-asset-item>
+                src="https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/DamagedHelmet/glTF-Binary/DamagedHelmet.glb"
+                crossorigin="anonymous"></a-asset-item>
             <a-asset-item id="camera-model"
-                src="https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/AntiqueCamera/glTF-Binary/AntiqueCamera.glb"></a-asset-item>
+                src="https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/AntiqueCamera/glTF-Binary/AntiqueCamera.glb"
+                crossorigin="anonymous"></a-asset-item>
+            <a-asset-item id="lantern-model"
+                src="https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Lantern/glTF-Binary/Lantern.glb"
+                crossorigin="anonymous"></a-asset-item>
+            <a-asset-item id="engine-model"
+                src="https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/2CylinderEngine/glTF-Binary/2CylinderEngine.glb"
+                crossorigin="anonymous"></a-asset-item>
+            <a-asset-item id="dragon-model"
+                src="https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/DragonAttenuation/glTF-Binary/DragonAttenuation.glb"
+                crossorigin="anonymous"></a-asset-item>
+            <a-asset-item id="waterbottle-model"
+                src="https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/WaterBottle/glTF-Binary/WaterBottle.glb"
+                crossorigin="anonymous"></a-asset-item>
         </a-assets>
 
         <!-- Ancient Theme Music (Kevin MacLeod - Mirage) - PLACED OUTSIDE A-ASSETS -->
@@ -119,24 +136,50 @@
 
         <!-- MARKER 1: WARRIOR HELMET -->
         <a-marker type="pattern" url="helmet.patt" id="marker-helmet" emitevents="true">
-            <a-entity id="entity-helmet" gltf-model="#helmet-model" position="0 0.5 0" scale="0.5 0.5 0.5"
-                rotation="0 0 0"
+            <a-entity id="entity-helmet" class="clickable" gltf-model="#helmet-model" position="0 0.5 0"
+                scale="0.5 0.5 0.5" rotation="0 0 0"
                 animation="property: rotation; to: 0 360 0; loop: true; dur: 10000; easing: linear; enabled: false">
             </a-entity>
-
-
-
-
         </a-marker>
 
         <!-- MARKER 2: ANTIQUE CAMERA -->
         <a-marker type="pattern" url="camera.patt" id="marker-camera" emitevents="true">
-            <a-entity id="entity-camera" gltf-model="#camera-model" position="0 0.5 0" scale="0.5 0.5 0.5"
-                rotation="0 -90 0"
+            <a-entity id="entity-camera" class="clickable" gltf-model="#camera-model" position="0 0.5 0"
+                scale="0.15 0.15 0.15" rotation="0 -90 0"
                 animation="property: rotation; to: 0 270 0; loop: true; dur: 10000; easing: linear; enabled: false">
             </a-entity>
+        </a-marker>
 
+        <!-- MARKER 3: LANTERN -->
+        <a-marker type="pattern" url="lantern.patt" id="marker-lantern" emitevents="true">
+            <a-entity id="entity-lantern" class="clickable" gltf-model="#lantern-model" position="0 0.2 0"
+                scale="0.08 0.08 0.08" rotation="0 0 0"
+                animation="property: rotation; to: 0 360 0; loop: true; dur: 10000; easing: linear; enabled: false">
+            </a-entity>
+        </a-marker>
 
+        <!-- MARKER 4: ENGINE -->
+        <a-marker type="pattern" url="engine.patt" id="marker-engine" emitevents="true">
+            <a-entity id="entity-engine" class="clickable" gltf-model="#engine-model" position="0 0.3 0"
+                scale="0.001 0.001 0.001" rotation="0 0 0"
+                animation="property: rotation; to: 0 360 0; loop: true; dur: 10000; easing: linear; enabled: false">
+            </a-entity>
+        </a-marker>
+
+        <!-- MARKER 5: DRAGON -->
+        <a-marker type="pattern" url="dragon.patt" id="marker-dragon" emitevents="true">
+            <a-entity id="entity-dragon" class="clickable" gltf-model="#dragon-model" position="0 0.5 0"
+                scale="0.3 0.3 0.3" rotation="0 0 0"
+                animation="property: rotation; to: 0 360 0; loop: true; dur: 10000; easing: linear; enabled: false">
+            </a-entity>
+        </a-marker>
+
+        <!-- MARKER 6: WATERBOTTLE -->
+        <a-marker type="pattern" url="waterbottle.patt" id="marker-waterbottle" emitevents="true">
+            <a-entity id="entity-waterbottle" class="clickable" gltf-model="#waterbottle-model" position="0 0.5 0"
+                scale="3 3 3" rotation="0 0 0"
+                animation="property: rotation; to: 0 360 0; loop: true; dur: 10000; easing: linear; enabled: false">
+            </a-entity>
         </a-marker>
 
         <a-entity camera>

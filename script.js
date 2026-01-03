@@ -1,4 +1,4 @@
-/* HOLO-MUSEUM LOGIC v3 - All Features */
+/* HOLO-MUSEUM LOGIC - All Features */
 
 // Global State
 let voiceActive = false;
@@ -11,12 +11,8 @@ let currentMarker = null;
 
 // Feature Flags
 let quizActive = false;
-let videoPlaying = false;
 
-// Audio Loop (Proximity)
-let proximityInterval = null;
-
-// Artifact Database
+// Artifact Database (6 existing + 4 new antiques = 10 total)
 const ARTIFACTS = {
     'helmet': {
         name: 'Royal War Helmet',
@@ -36,8 +32,52 @@ const ARTIFACTS = {
         markerId: 'marker-camera',
         quiz: {
             q: "What part of this camera folds?",
-            a: "Bellows", // Keyword check
+            a: "Bellows",
             options: ["The Lens", "The Flash", "The Bellows"]
+        }
+    },
+    'lantern': {
+        name: 'Old Lantern',
+        description: 'An oil-based lantern used for lighting before electricity. Commonly used by miners and travelers.',
+        entityId: 'entity-lantern',
+        markerId: 'marker-lantern',
+        quiz: {
+            q: "What fuel did this use?",
+            a: "Oil",
+            options: ["Battery", "Oil", "Solar"]
+        }
+    },
+    'engine': {
+        name: '2-Cylinder Engine',
+        description: 'A classic internal combustion engine. It converts chemical energy into mechanical energy.',
+        entityId: 'entity-engine',
+        markerId: 'marker-engine',
+        quiz: {
+            q: "What does it convert?",
+            a: "Energy",
+            options: ["Water", "Energy", "Data"]
+        }
+    },
+    'dragon': {
+        name: 'Mythical Dragon',
+        description: 'A glasswork statue of a legendary creature. Dragons appear in the folklore of many cultures around the world.',
+        entityId: 'entity-dragon',
+        markerId: 'marker-dragon',
+        quiz: {
+            q: "Is this creature real?",
+            a: "Mythical",
+            options: ["Real", "Mythical", "Extinct"]
+        }
+    },
+    'waterbottle': {
+        name: 'Water Bottle',
+        description: 'A reusable water container. Essential for hydration during long expeditions.',
+        entityId: 'entity-waterbottle',
+        markerId: 'marker-waterbottle',
+        quiz: {
+            q: "What is it for?",
+            a: "Hydration",
+            options: ["Cooking", "Hydration", "Decoration"]
         }
     }
 };
@@ -48,39 +88,49 @@ document.addEventListener('DOMContentLoaded', () => {
     const splashScreen = document.getElementById('splash-screen');
     const uiLayer = document.getElementById('ui-layer');
 
-    // Video
-    const historyVideo = document.getElementById('history-video');
-
     // Start Experience
     startBtn.addEventListener('click', () => {
         splashScreen.style.opacity = '0';
         setTimeout(() => splashScreen.remove(), 800);
         uiLayer.classList.remove('hidden');
 
-        // initVoice(); // Disabled auto-mic to remove permission prompt
         speak("Welcome. Please scan a marker.");
 
-        // Initialize Web Audio API (Guaranteed to work)
+        // Initialize Web Audio API
         initAncientAmbience();
 
         // Start Proximity Loop
         startProximityCheck();
     });
 
-    // MARKER EVENTS
-    setupMarkerEvents('helmet');
-    setupMarkerEvents('camera');
+    // MARKER EVENTS - Initialize ALL artifacts
+    Object.keys(ARTIFACTS).forEach(key => {
+        setupMarkerEvents(key);
+    });
 
     function setupMarkerEvents(key) {
         const marker = document.getElementById(ARTIFACTS[key].markerId);
+        if (!marker) {
+            console.warn(`Marker element not found for: ${key}`);
+            return;
+        }
 
         marker.addEventListener('markerFound', () => {
             currentArtifact = key;
             currentMarker = marker;
+
+            // Enforce Visibility: Hide ALL others, Show THIS one
+            Object.keys(ARTIFACTS).forEach(k => {
+                const el = document.getElementById(ARTIFACTS[k].entityId);
+                if (el) {
+                    el.setAttribute('visible', k === key ? 'true' : 'false');
+                }
+            });
+
             activeEntity = document.getElementById(ARTIFACTS[key].entityId);
             updateStatus(true, ARTIFACTS[key].name);
 
-            // Start Music (User Request: "When scanned")
+            // Start Music
             if (masterGain) masterGain.gain.setTargetAtTime(0.3, audioCtx.currentTime, 0.5);
         });
 
@@ -98,7 +148,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-/* --- FEATURE 5: ANCIENT AMBIENT MUSIC (Web Audio API) --- */
+/* --- AMBIENT MUSIC (Web Audio API) --- */
 let audioCtx = null;
 let masterGain = null;
 
@@ -107,31 +157,23 @@ function initAncientAmbience() {
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         audioCtx = new AudioContext();
 
-        // Master volume control
         masterGain = audioCtx.createGain();
         masterGain.gain.setValueAtTime(0.25, audioCtx.currentTime);
         masterGain.connect(audioCtx.destination);
 
-        // === FLUTE-LIKE MELODY ===
-        // Higher frequencies for flute range (D4, F#4, A4, D5)
+        // Flute-like melody
         const fluteNotes = [293.66, 369.99, 440, 587.33];
-
         fluteNotes.forEach((freq, i) => {
             const osc = audioCtx.createOscillator();
             const oscGain = audioCtx.createGain();
-
-            // Sine wave = pure flute-like tone
             osc.type = 'sine';
             osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-
-            // Stagger volumes for depth
             oscGain.gain.setValueAtTime(0.06 - (i * 0.01), audioCtx.currentTime);
 
-            // Add vibrato (slight frequency wobble like breath)
             const vibrato = audioCtx.createOscillator();
             const vibratoGain = audioCtx.createGain();
-            vibrato.frequency.setValueAtTime(5 + i, audioCtx.currentTime); // 5-8 Hz wobble
-            vibratoGain.gain.setValueAtTime(3, audioCtx.currentTime); // Subtle
+            vibrato.frequency.setValueAtTime(5 + i, audioCtx.currentTime);
+            vibratoGain.gain.setValueAtTime(3, audioCtx.currentTime);
             vibrato.connect(vibratoGain);
             vibratoGain.connect(osc.frequency);
             vibrato.start();
@@ -141,23 +183,17 @@ function initAncientAmbience() {
             osc.start();
         });
 
-        // === STRING PAD (Violin-like drone) ===
-        const stringNotes = [146.83, 220, 329.63]; // D3, A3, E4 (open string tuning)
-
-        stringNotes.forEach((freq, i) => {
-            // Use 2 detuned oscillators per note for richness
+        // String pad
+        const stringNotes = [146.83, 220, 329.63];
+        stringNotes.forEach((freq) => {
             for (let d = -5; d <= 5; d += 10) {
                 const osc = audioCtx.createOscillator();
                 const oscGain = audioCtx.createGain();
-
-                // Sawtooth = rich harmonics like strings
                 osc.type = 'sawtooth';
                 osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
                 osc.detune.setValueAtTime(d, audioCtx.currentTime);
-
                 oscGain.gain.setValueAtTime(0.015, audioCtx.currentTime);
 
-                // Add slow vibrato
                 const vib = audioCtx.createOscillator();
                 const vibGain = audioCtx.createGain();
                 vib.frequency.setValueAtTime(4, audioCtx.currentTime);
@@ -172,18 +208,16 @@ function initAncientAmbience() {
             }
         });
 
-        console.log("Flute & String Ambience Started");
-
+        console.log("Ambience Started");
     } catch (e) {
         console.error("Web Audio API Error:", e);
     }
 }
 
-/* --- FEATURE 4: PROXIMITY AUDIO --- */
+/* --- PROXIMITY AUDIO --- */
 function startProximityCheck() {
     setInterval(() => {
         if (!masterGain || !currentMarker || !currentArtifact) {
-            // Fade out if lost
             if (masterGain && audioCtx) masterGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.3);
             return;
         }
@@ -195,19 +229,16 @@ function startProximityCheck() {
         const markPos = new THREE.Vector3();
         currentMarker.object3D.getWorldPosition(markPos);
 
-        // Distance Logic
         const d = camPos.distanceTo(markPos);
         let vol = 1 - ((d - 0.3) / 1.2);
-
         if (vol < 0.1) vol = 0.1;
         if (vol > 0.5) vol = 0.5;
 
-        // Apply (Smoothly)
         masterGain.gain.setTargetAtTime(vol, audioCtx.currentTime, 0.1);
-
     }, 200);
 }
-// Called via onclick in HTML
+
+/* --- HOTSPOT --- */
 window.showHotspot = function (title, text) {
     const tooltip = document.getElementById('hotspot-tooltip');
     document.getElementById('hotspot-title').innerText = title;
@@ -216,46 +247,31 @@ window.showHotspot = function (title, text) {
     tooltip.classList.remove('hidden');
     speak(title + ". " + text);
 
-    // Auto hide after 5s
     setTimeout(() => tooltip.classList.add('hidden'), 5000);
 };
 
-/* --- FEATURE 2: SNAPSHOT --- */
+/* --- SNAPSHOT --- */
 window.takeSnapshot = function () {
     speak("SMILE!");
 
-    // Flash Effect
     const flash = document.createElement('div');
-    flash.style.position = 'fixed';
-    flash.style.top = 0; flash.style.left = 0;
-    flash.style.width = '100vw'; flash.style.height = '100vh';
-    flash.style.background = 'white';
-    flash.style.zIndex = 99999;
-    flash.style.transition = 'opacity 0.2s';
+    flash.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:white;z-index:99999;transition:opacity 0.2s';
     document.body.appendChild(flash);
     setTimeout(() => { flash.style.opacity = 0; setTimeout(() => flash.remove(), 200); }, 50);
 
-    // Give time for UI update then Capture
     requestAnimationFrame(() => {
-        // AR.js creates a <video> for webcam and a <canvas> for 3D
         const video = document.querySelector('video');
         const aScene = document.querySelector('a-scene');
         const glCanvas = aScene.renderer.domElement;
 
-        // Create Merge Canvas
         const captureCanvas = document.createElement('canvas');
         captureCanvas.width = glCanvas.width;
         captureCanvas.height = glCanvas.height;
         const ctx = captureCanvas.getContext('2d');
 
-        // 1. Draw Video (Webcam)
-        // Adjust for aspect ratio difference if needed (Simple stretch for MVP)
         ctx.drawImage(video, 0, 0, captureCanvas.width, captureCanvas.height);
-
-        // 2. Draw 3D Scene
         ctx.drawImage(glCanvas, 0, 0);
 
-        // 3. Download
         const link = document.createElement('a');
         link.download = `holo-museum-${Date.now()}.png`;
         link.href = captureCanvas.toDataURL('image/png');
@@ -265,7 +281,7 @@ window.takeSnapshot = function () {
     });
 };
 
-/* --- FEATURE 3: QUIZ --- */
+/* --- QUIZ --- */
 window.startQuiz = function () {
     if (!currentArtifact) {
         speak("Scan an artifact first.");
@@ -281,7 +297,6 @@ window.startQuiz = function () {
     document.getElementById('quiz-question').innerText = data.q;
     speak("Quiz time. " + data.q);
 
-    // Generate Buttons
     qBox.innerHTML = '';
     data.options.forEach(opt => {
         const btn = document.createElement('button');
@@ -291,7 +306,6 @@ window.startQuiz = function () {
         qBox.appendChild(btn);
     });
 
-    // Back Button
     const backBtn = document.createElement('button');
     backBtn.className = 'quiz-btn';
     backBtn.style.border = '1px solid #ff4444';
@@ -306,11 +320,10 @@ window.startQuiz = function () {
 };
 
 function checkAnswer(userAnswer, correctAnswer) {
-    const feedback = document.getElementById('quiz-options'); // Reuse area
+    const feedback = document.getElementById('quiz-options');
 
     if (userAnswer.includes(correctAnswer)) {
         speak("Correct! Well done.");
-        // Visual Success
         feedback.innerHTML = '<h2 style="color:#00ff00; font-size: 3rem;">✓ CORRECT</h2>';
     } else {
         speak("Incorrect. The answer is " + correctAnswer);
@@ -322,9 +335,6 @@ function checkAnswer(userAnswer, correctAnswer) {
         quizActive = false;
     }, 2000);
 }
-
-/* --- FEATURE 4: PROXIMITY AUDIO REMOVED --- */
-// Functionality cleared per user request.
 
 /* --- UTILS --- */
 function updateStatus(found, name) {
@@ -344,41 +354,6 @@ function updateStatus(found, name) {
     }
 }
 
-function initVoice() {
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        recognition = new SpeechRecognition();
-        recognition.continuous = true;
-        recognition.lang = 'en-US';
-        recognition.interimResults = false;
-
-        recognition.onresult = (event) => {
-            const transcript = event.results[event.results.length - 1][0].transcript.trim().toLowerCase();
-            showVoiceFeedback(transcript);
-
-            // If quiz is active, check answer via voice
-            if (quizActive && currentArtifact) {
-                const ans = ARTIFACTS[currentArtifact].quiz.a.toLowerCase();
-                // Heuristic check
-                checkAnswer(transcript, ans); // Will fail if not exact match logic, but good enough for demo
-            } else {
-                processCommand(transcript);
-            }
-        };
-        recognition.start();
-    }
-}
-
-function processCommand(cmd) {
-    // Shared interactions
-    if (cmd.includes('spin') || cmd.includes('rotate')) interact('rotate');
-    else if (cmd.includes('stop') || cmd.includes('reset')) interact('reset');
-    else if (cmd.includes('tell') || cmd.includes('info')) triggerVoiceInfo();
-    else if (cmd.includes('x-ray') || cmd.includes('wire')) toggleWireframe();
-    else if (cmd.includes('quiz')) startQuiz();
-    else if (cmd.includes('photo') || cmd.includes('picture') || cmd.includes('capture')) takeSnapshot();
-}
-
 function interact(action) {
     if (!activeEntity) return;
 
@@ -387,6 +362,41 @@ function interact(action) {
         activeEntity.setAttribute('animation', 'enabled', !anim.enabled);
     }
 }
+
+// 360 View - Rotate on multiple axes
+let is360Active = false;
+window.toggle360View = function () {
+    if (!activeEntity) {
+        speak("Scan an artifact first.");
+        return;
+    }
+
+    is360Active = !is360Active;
+
+    if (is360Active) {
+        activeEntity.setAttribute('animation__360x', {
+            property: 'rotation',
+            to: '360 0 0',
+            loop: true,
+            dur: 8000,
+            easing: 'linear'
+        });
+        activeEntity.setAttribute('animation__360y', {
+            property: 'object3D.rotation.y',
+            from: 0,
+            to: 6.28,
+            loop: true,
+            dur: 10000,
+            easing: 'linear'
+        });
+        speak("360 view enabled.");
+    } else {
+        activeEntity.removeAttribute('animation__360x');
+        activeEntity.removeAttribute('animation__360y');
+        activeEntity.object3D.rotation.set(0, 0, 0);
+        speak("360 view disabled.");
+    }
+};
 
 function toggleWireframe() {
     if (!activeEntity) return;
@@ -405,15 +415,10 @@ function triggerVoiceInfo() {
 }
 
 function speak(text) {
-    // 1. Cancel anything currently saying
     window.speechSynthesis.cancel();
-
-    // 2. Create new utterance
     const utterThis = new SpeechSynthesisUtterance(text);
     utterThis.pitch = 1;
     utterThis.rate = 1;
-
-    // 3. Force speak immediately
     window.speechSynthesis.speak(utterThis);
 }
 
